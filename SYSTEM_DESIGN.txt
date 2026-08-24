@@ -1,0 +1,26 @@
+SYSTEM DESIGN & ENGINEERING WRITE-UP
+PROJECT: DrPatho Appointments - Healthcare Appointment & Follow-up Manager
+
+1. DOUBLE-BOOKING PREVENTION STRATEGY
+- Composite Unique Database Constraints: The platform enforces a composite unique constraint (doctorId + slotTime) on both the Appointment and SlotHold tables in the database schema.
+- ACID Database Transactions: Booking and slot holding operations are wrapped inside atomic database transactions (prisma.$transaction) executing with immediate isolation.
+- Pre-Allocation Conflict Check: Before creating a booking, the system queries for any existing confirmed appointment or active non-expired hold matching the exact doctor ID and slot timestamp.
+- Race Condition Shielding: If two patients attempt to book the exact same millisecond slot, the database constraint causes the second transaction to abort immediately, throwing an HTTP 409 Conflict error and keeping the schedule 100% clean.
+
+2. SLOT HOLD MECHANISM (5-MINUTE TTL LOCK)
+- Temporary Reservation Window: When a patient selects an available time slot, the system creates a SlotHold record with an expiration timestamp set to 5 minutes in the future (expiresAt = currentTime + 5 minutes).
+- Active Hold Evaluation: During slot availability checks, any slot with an active hold (expiresAt > currentTime) is flagged as unavailable to other patients while showing as "LOCKED" to the holding patient.
+- Automatic TTL Cleanup: Expired slot holds are automatically purged by a background cron worker running every hour, as well as lazily cleaned during live availability queries.
+- Seamless Conversion: Once the patient submits their symptoms, the booking transaction atomically deletes the SlotHold record and converts it into a confirmed Appointment in a single step.
+
+3. DOCTOR LEAVE CONFLICT HANDLING & RESOLUTION
+- Conflict Auto-Detection: When a doctor applies for leave for a date range (startDate to endDate), the system queries all existing confirmed or pending appointments scheduled with that doctor within the leave window.
+- Status Cascade Update: All conflicting appointments are updated in bulk to the status "CANCELLED_DUE_TO_LEAVE".
+- Automated Patient Notification Queue: For each affected booking, the system enqueues an urgent email notification informing the patient about the doctor's absence and providing direct links to select a new appointment slot with priority.
+- Prevention of New Bookings: While a doctor is on leave, slot generation algorithms automatically mark the entire date range as "ON_LEAVE" and return zero available slots.
+
+4. NOTIFICATION FAILURE HANDLING & RELIABILITY
+- Transactional Logging: Every outgoing email notification (booking confirmation, cancellation, reminder, medication alert) is logged in the NotificationLog table with an initial status of "PENDING" or "FAILED".
+- Exponential Backoff Worker: A node-cron background task scans for failed notifications (status = "FAILED", attempts < 3) every 15 minutes and re-attempts delivery with exponential backoff intervals (10 minutes, 20 minutes).
+- Google Calendar Direct Web Fallback: Alongside Google Calendar API sync, every confirmation email generates a direct Google Calendar web URL (calendar.google.com/calendar/render?action=TEMPLATE...), ensuring patients can add events to their calendar even if API credentials are unconfigured.
+- Admin Delivery Auditor: An admin dashboard audit log allows system administrators to monitor email delivery health in real-time and trigger manual re-sends for any failed notifications with a single click.
