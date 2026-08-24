@@ -64,6 +64,10 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log(`=======================================================`);
+    console.log(`[Render Server API Log] Incoming Login Attempt! Email: ${email}`);
+    console.log(`[Render Server API Log] Timestamp: ${new Date().toISOString()}`);
+    console.log(`=======================================================`);
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });

@@ -39,6 +39,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       ? { email, password }
       : { name, email, password, role, specialization };
 
+    console.log('%c[Vercel -> Render Connection Test] Login Clicked!', 'background: #DC2626; color: #fff; font-weight: bold; padding: 4px 8px; border-radius: 4px;');
+    console.log(`[Vercel -> Render Connection Test] Target Endpoint: ${endpoint}`);
+    console.log(`[Vercel -> Render Connection Test] Environment VITE_API_URL: "${import.meta.env.VITE_API_URL || '(Defaulting to relative /api)'}"`);
+    console.log(`[Vercel -> Render Connection Test] Request Payload:`, { email, role: isLogin ? 'LOGIN' : role });
+
     try {
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -46,20 +51,28 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         body: JSON.stringify(payload),
       });
 
+      console.log(`[Vercel -> Render Connection Test] HTTP Response Status: ${res.status} ${res.statusText}`);
+
       let data = {};
       try {
         data = await res.json();
+        console.log(`[Vercel -> Render Connection Test] Received Server Payload:`, data);
       } catch (jsonErr) {
+        console.error(`[Vercel -> Render Connection Test] Failed to parse JSON response from ${endpoint}`);
         throw new Error('Connecting to backend server... Render free tier instances take ~20 seconds to wake up on first visit. Please wait a moment and try again.');
       }
 
       if (!res.ok) {
+        console.error(`[Vercel -> Render Connection Test] Backend Returned Error:`, data.error);
         throw new Error(data.error || 'Authentication failed. Please check your credentials.');
       }
+
+      console.log('%c[Vercel -> Render Connection Test] SUCCESS! Vercel is connected to Render backend!', 'background: #047857; color: #fff; font-weight: bold; padding: 4px 8px; border-radius: 4px;', data);
 
       onAuthSuccess(data.user, data.token);
       onClose();
     } catch (err) {
+      console.error(`[Vercel -> Render Connection Test] CONNECTION FAILED:`, err.message);
       setError(err.message);
     } finally {
       setLoading(false);
