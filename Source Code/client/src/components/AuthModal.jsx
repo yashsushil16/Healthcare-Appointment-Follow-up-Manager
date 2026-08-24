@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, LogIn, UserPlus, Shield, Stethoscope, User } from 'lucide-react';
+import { getApiUrl } from '../apiConfig';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -33,7 +34,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     setError('');
     setLoading(true);
 
-    const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+    const endpoint = getApiUrl(isLogin ? '/api/auth/login' : '/api/auth/register');
     const payload = isLogin
       ? { email, password }
       : { name, email, password, role, specialization };
@@ -49,7 +50,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       try {
         data = await res.json();
       } catch (jsonErr) {
-        throw new Error('Unable to connect to server. Please ensure backend server is running on port 5000.');
+        throw new Error('Connecting to backend server... Render free tier instances take ~20 seconds to wake up on first visit. Please wait a moment and try again.');
       }
 
       if (!res.ok) {
@@ -105,7 +106,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           {!isLogin && (
             <div style={{ marginBottom: '14px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A', display: 'block', marginBottom: '4px' }}>Full Name</label>
-              <input type="text" required placeholder="Johnathan Doe" value={name} onChange={e => setName(e.target.value)} className="form-input" />
+              <input type="text" required placeholder="Aarav Mehta" value={name} onChange={e => setName(e.target.value)} className="form-input" />
             </div>
           )}
 
