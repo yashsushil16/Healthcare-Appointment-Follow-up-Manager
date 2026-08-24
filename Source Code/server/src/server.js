@@ -51,7 +51,14 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || 'An unexpected server error occurred' });
 });
 
-app.listen(PORT, () => {
+const { seed } = require('./seed');
+
+app.listen(PORT, async () => {
+  try {
+    await seed(false);
+  } catch (e) {
+    console.warn('[Server Startup] Auto-seed warning:', e.message);
+  }
   console.log(`=======================================================`);
   console.log(`  DrPatho Appointments Server is running on port ${PORT}`);
   console.log(`  Health Check: http://localhost:${PORT}/api/health`);
