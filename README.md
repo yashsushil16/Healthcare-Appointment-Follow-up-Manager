@@ -86,18 +86,6 @@ npm run dev
 
 ---
 
-## 🔑 Pre-Configured Demo Login Accounts (Indian Profiles)
-
-| Role | Name | Email | Password | Description |
-|---|---|---|---|---|
-| **Patient** | Aarav Mehta | `patient@drpatho.com` | `password123` | Book appointments, view 5-min slot lock, AI summaries |
-| **Doctor** | Dr. Ananya Deshmukh | `ananya.deshmukh@drpatho.com` | `password123` | Senior Cardiologist: View pre-visit AI insights, complete visit, apply leave |
-| **Admin** | Rajesh Sharma | `admin@drpatho.com` | `admin123` | System Administrator: Onboard doctors, system stats, notification retry logs |
-
-*(One-click autofill buttons are also available on the Sign In modal in the application header!)*
-
----
-
 ## 🧠 LLM Prompts & Failure Graceful Fallback Guide
 
 ### 1. Pre-Visit AI Symptom Summary Prompt
