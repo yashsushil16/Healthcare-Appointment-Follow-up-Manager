@@ -110,6 +110,35 @@ router.put('/doctors/:id', async (req, res) => {
   }
 });
 
+// Admin delete Doctor Profile & User Account
+router.delete('/doctors/:id', async (req, res) => {
+  try {
+    const doctorProfileId = req.params.id;
+
+    const doctorProfile = await prisma.doctorProfile.findUnique({
+      where: { id: doctorProfileId },
+      include: { user: true },
+    });
+
+    if (!doctorProfile) {
+      return res.status(404).json({ error: 'Doctor profile not found' });
+    }
+
+    // Clean dependent records
+    await prisma.prescription.deleteMany({ where: { appointment: { doctorProfileId } } });
+    await prisma.appointment.deleteMany({ where: { doctorProfileId } });
+    await prisma.slotHold.deleteMany({ where: { doctorProfileId } });
+    await prisma.doctorLeave.deleteMany({ where: { doctorProfileId } });
+    await prisma.doctorProfile.delete({ where: { id: doctorProfileId } });
+    await prisma.user.delete({ where: { id: doctorProfile.userId } });
+
+    res.json({ message: `Doctor profile for ${doctorProfile.user?.name || 'doctor'} removed successfully` });
+  } catch (error) {
+    console.error('Error deleting doctor:', error);
+    res.status(500).json({ error: 'Failed to delete doctor profile' });
+  }
+});
+
 // Get Notification logs
 router.get('/notifications', async (req, res) => {
   try {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Calendar, Activity, RefreshCw, CheckCircle2, AlertTriangle, Shield, Clock } from 'lucide-react';
+import { Users, UserPlus, Calendar, Activity, RefreshCw, CheckCircle2, AlertTriangle, Shield, Clock, Trash2 } from 'lucide-react';
 import { getApiUrl } from '../apiConfig';
 
 export default function AdminPortal({ user, token }) {
@@ -122,6 +122,35 @@ export default function AdminPortal({ user, token }) {
       setAlert({ type: 'error', text: err.message });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteDoctor = async (docId, doctorName) => {
+    if (!token) {
+      setAlert({ type: 'error', text: 'Please sign in as Admin to remove a doctor profile.' });
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to remove Dr. ${doctorName}? This will clear their active profile.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(getApiUrl(`/api/admin/doctors/${docId}`), {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      let data = {};
+      try { data = await res.json(); } catch (e) {}
+
+      if (!res.ok) throw new Error(data.error || 'Failed to remove doctor profile');
+
+      setAlert({ type: 'success', text: `Doctor profile for Dr. ${doctorName} removed successfully.` });
+      fetchDoctors();
+      fetchStats();
+    } catch (err) {
+      setAlert({ type: 'error', text: err.message });
     }
   };
 
@@ -267,6 +296,13 @@ export default function AdminPortal({ user, token }) {
                       <p style={{ fontSize: '12px', color: '#DC2626', fontWeight: '700' }}>{doc.specialization} • ₹{doc.consultationFee} fee</p>
                       <p style={{ fontSize: '11px', color: '#64748B' }}>Working Hours: {doc.workingHoursStart} - {doc.workingHoursEnd} ({doc.slotDurationMinutes} min slot)</p>
                     </div>
+                    <button
+                      onClick={() => handleDeleteDoctor(doc.id, doc.user?.name)}
+                      className="btn-secondary"
+                      style={{ color: '#DC2626', borderColor: '#FCA5A5', background: '#FEF2F2', fontSize: '12px', padding: '6px 12px' }}
+                    >
+                      <Trash2 size={14} /> Remove Doctor
+                    </button>
                   </div>
                 </div>
               ))
