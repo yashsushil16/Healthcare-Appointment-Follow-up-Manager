@@ -2,6 +2,10 @@
 node_modules/
 **/node_modules/
 
+# Root legacy working dirs (All source code is cleanly inside Source Code/)
+/client/
+/server/
+
 # Builds & Dist
 dist/
 **/dist/

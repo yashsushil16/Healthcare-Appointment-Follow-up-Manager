@@ -22,8 +22,12 @@ export default function DoctorPortal({ user, token }) {
       const res = await fetch('/api/appointments/my-appointments', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      setAppointments(data);
+      if (!res.ok) return;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (Array.isArray(data)) setAppointments(data);
+      }
     } catch (err) {
       console.error('Error fetching doctor appointments:', err);
     }

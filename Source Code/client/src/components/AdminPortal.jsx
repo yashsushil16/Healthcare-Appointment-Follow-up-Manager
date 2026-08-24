@@ -33,6 +33,7 @@ export default function AdminPortal({ user, token }) {
       const res = await fetch('/api/admin/stats', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) return;
       const data = await res.json();
       setStats(data);
     } catch (err) {
@@ -43,8 +44,12 @@ export default function AdminPortal({ user, token }) {
   const fetchDoctors = async () => {
     try {
       const res = await fetch('/api/doctors');
-      const data = await res.json();
-      setDoctors(data);
+      if (!res.ok) return;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (Array.isArray(data)) setDoctors(data);
+      }
     } catch (err) {
       console.error('Error fetching doctors:', err);
     }
@@ -55,8 +60,12 @@ export default function AdminPortal({ user, token }) {
       const res = await fetch('/api/admin/notifications', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      setNotifications(data);
+      if (!res.ok) return;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (Array.isArray(data)) setNotifications(data);
+      }
     } catch (err) {
       console.error('Error fetching notifications:', err);
     }

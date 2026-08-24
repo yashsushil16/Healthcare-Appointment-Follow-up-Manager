@@ -1,8 +1,35 @@
 /**
  * LLM Integration Service with Graceful Fallback Engine
- * Uses OpenAI API (or Gemini API) when API keys are available,
+ * Uses Gemini API (or OpenAI API) when API keys are available,
  * otherwise runs built-in NLP-inspired rule fallback parser.
  */
+
+// Helper to attempt Google Gemini completion if API key is provided
+async function callGemini(prompt) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: `${prompt}\nReturn strictly raw JSON format without markdown ticks.` }]
+        }],
+        generationConfig: { responseMimeType: 'application/json' }
+      }),
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return JSON.parse(text);
+  } catch (err) {
+    console.warn('[LLM Service] Gemini call failed:', err.message);
+    return null;
+  }
+}
 
 // Helper to attempt OpenAI completion if API key is provided
 async function callOpenAI(prompt, systemInstruction = 'You are a professional medical AI assistant. Always output clean JSON.') {
@@ -32,7 +59,7 @@ async function callOpenAI(prompt, systemInstruction = 'You are a professional me
     const content = data.choices[0]?.message?.content;
     return JSON.parse(content);
   } catch (err) {
-    console.warn('[LLM Service] OpenAI call failed or returned unparseable output:', err.message);
+    console.warn('[LLM Service] OpenAI call failed:', err.message);
     return null;
   }
 }
@@ -45,7 +72,10 @@ async function callOpenAI(prompt, systemInstruction = 'You are a professional me
 async function generatePreVisitSummary(symptoms) {
   const prompt = `Analyse these symptoms and return JSON with keys "urgency" ("Low" | "Medium" | "High"), "chiefComplaint" (string), and "suggestedQuestions" (array of 3 strings). Symptoms: ${symptoms}`;
 
-  const llmResult = await callOpenAI(prompt);
+  let llmResult = await callGemini(prompt);
+  if (!llmResult) {
+    llmResult = await callOpenAI(prompt);
+  }
 
   if (llmResult && llmResult.urgency && llmResult.chiefComplaint && Array.isArray(llmResult.suggestedQuestions)) {
     return {
@@ -62,7 +92,6 @@ async function generatePreVisitSummary(symptoms) {
 function fallbackPreVisitAnalysis(symptoms) {
   const text = symptoms.toLowerCase();
 
-  // Keyword triage for urgency determination
   let urgency = 'Low';
   const highRiskKeywords = ['chest pain', 'shortness of breath', 'severe', 'bleeding', 'fainting', 'unconscious', 'high fever', 'numbness'];
   const mediumRiskKeywords = ['persistent', 'pain', 'fever', 'cough', 'swelling', 'vomiting', 'dizziness', 'migraine', 'infection'];
@@ -73,11 +102,9 @@ function fallbackPreVisitAnalysis(symptoms) {
     urgency = 'Medium';
   }
 
-  // Extract chief complaint (first phrase or sentence)
   const cleanSymptoms = symptoms.trim();
   const chiefComplaint = cleanSymptoms.length > 80 ? cleanSymptoms.substring(0, 80) + '...' : cleanSymptoms;
 
-  // Generate relevant questions based on urgency & text
   const questions = [
     `How long have these symptoms (${chiefComplaint.slice(0, 30)}) been presenting?`,
     `Are there any specific triggers or relief factors you've noticed?`,
@@ -101,7 +128,10 @@ function fallbackPreVisitAnalysis(symptoms) {
 async function generatePostVisitSummary(notes, medications = []) {
   const prompt = `Convert these clinical notes into a patient-friendly summary with medication schedule and follow-up steps. Clinical Notes: ${notes}. Prescribed Medications: ${JSON.stringify(medications)}. Return JSON with keys: "summary" (string), "medicationSchedule" (array of strings), "followUpSteps" (array of strings).`;
 
-  const llmResult = await callOpenAI(prompt);
+  let llmResult = await callGemini(prompt);
+  if (!llmResult) {
+    llmResult = await callOpenAI(prompt);
+  }
 
   if (llmResult && llmResult.summary && Array.isArray(llmResult.medicationSchedule)) {
     return {

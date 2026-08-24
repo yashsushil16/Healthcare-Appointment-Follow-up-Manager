@@ -35,10 +35,16 @@ export default function PatientPortal({ user, token, onHoldTimerStart }) {
       let url = `/api/doctors?specialization=${specialization}`;
       if (searchQuery) url += `&query=${encodeURIComponent(searchQuery)}`;
       const res = await fetch(url);
-      const data = await res.json();
-      setDoctors(data);
-      if (data.length > 0 && !selectedDoctor) {
-        setSelectedDoctor(data[0]);
+      if (!res.ok) return;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setDoctors(data);
+          if (data.length > 0 && !selectedDoctor) {
+            setSelectedDoctor(data[0]);
+          }
+        }
       }
     } catch (err) {
       console.error('Error fetching doctors:', err);
@@ -50,8 +56,12 @@ export default function PatientPortal({ user, token, onHoldTimerStart }) {
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await fetch(`/api/doctors/${docId}/slots?date=${dateStr}`, { headers });
-      const data = await res.json();
-      setSlotsData(data);
+      if (!res.ok) return;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        setSlotsData(data);
+      }
     } catch (err) {
       console.error('Error fetching slots:', err);
     } finally {
@@ -65,8 +75,12 @@ export default function PatientPortal({ user, token, onHoldTimerStart }) {
       const res = await fetch('/api/appointments/my-appointments', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      setMyAppointments(data);
+      if (!res.ok) return;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (Array.isArray(data)) setMyAppointments(data);
+      }
     } catch (err) {
       console.error('Error fetching my appointments:', err);
     }
