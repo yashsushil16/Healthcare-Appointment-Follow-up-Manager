@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, Calendar, Activity, RefreshCw, CheckCircle2, AlertTriangle, Shield, Clock } from 'lucide-react';
+import { getApiUrl } from '../apiConfig';
 
 export default function AdminPortal({ user, token }) {
   const [stats, setStats] = useState(null);
@@ -21,16 +22,16 @@ export default function AdminPortal({ user, token }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    fetchDoctors();
     if (token) {
       fetchStats();
-      fetchDoctors();
       fetchNotifications();
     }
   }, [token]);
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/admin/stats', {
+      const res = await fetch(getApiUrl('/api/admin/stats'), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
@@ -43,7 +44,7 @@ export default function AdminPortal({ user, token }) {
 
   const fetchDoctors = async () => {
     try {
-      const res = await fetch('/api/doctors');
+      const res = await fetch(getApiUrl('/api/doctors'));
       if (!res.ok) return;
       const contentType = res.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
@@ -57,7 +58,7 @@ export default function AdminPortal({ user, token }) {
 
   const fetchNotifications = async () => {
     try {
-      const res = await fetch('/api/admin/notifications', {
+      const res = await fetch(getApiUrl('/api/admin/notifications'), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
@@ -74,8 +75,16 @@ export default function AdminPortal({ user, token }) {
   const handleCreateDoctor = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setAlert(null);
+
+    if (!token) {
+      setAlert({ type: 'error', text: 'Please sign in as Admin to onboard a new doctor.' });
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch('/api/admin/doctors', {
+      const res = await fetch(getApiUrl('/api/admin/doctors'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,8 +93,16 @@ export default function AdminPortal({ user, token }) {
         body: JSON.stringify(newDoctor),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        throw new Error('Could not parse server response');
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create doctor profile');
+      }
 
       setAlert({ type: 'success', text: `Doctor profile created for Dr. ${newDoctor.name}!` });
       setNewDoctor({
@@ -94,7 +111,7 @@ export default function AdminPortal({ user, token }) {
         password: 'password123',
         specialization: 'Cardiology',
         bio: '',
-        consultationFee: 80,
+        consultationFee: 800,
         slotDurationMinutes: 30,
         workingHoursStart: '09:00',
         workingHoursEnd: '17:00',
@@ -110,12 +127,13 @@ export default function AdminPortal({ user, token }) {
 
   const handleRetryNotification = async (logId) => {
     try {
-      const res = await fetch(`/api/admin/notifications/${logId}/retry`, {
+      const res = await fetch(getApiUrl(`/api/admin/notifications/${logId}/retry`), {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      setAlert({ type: data.success ? 'success' : 'error', text: data.message });
+      let data = {};
+      try { data = await res.json(); } catch(e) {}
+      setAlert({ type: data.success ? 'success' : 'error', text: data.message || 'Retry completed' });
       fetchNotifications();
     } catch (err) {
       setAlert({ type: 'error', text: 'Retry execution error' });
@@ -196,11 +214,11 @@ export default function AdminPortal({ user, token }) {
               <form onSubmit={handleCreateDoctor}>
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A', display: 'block', marginBottom: '4px' }}>Full Name</label>
-                  <input type="text" required placeholder="Dr. Jane Smith" value={newDoctor.name} onChange={e => setNewDoctor({ ...newDoctor, name: e.target.value })} className="form-input" />
+                  <input type="text" required placeholder="Dr. Yash Sharma" value={newDoctor.name} onChange={e => setNewDoctor({ ...newDoctor, name: e.target.value })} className="form-input" />
                 </div>
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A', display: 'block', marginBottom: '4px' }}>Email Address</label>
-                  <input type="email" required placeholder="jane.smith@drpatho.com" value={newDoctor.email} onChange={e => setNewDoctor({ ...newDoctor, email: e.target.value })} className="form-input" />
+                  <input type="email" required placeholder="yash.doctor@drpatho.com" value={newDoctor.email} onChange={e => setNewDoctor({ ...newDoctor, email: e.target.value })} className="form-input" />
                 </div>
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A', display: 'block', marginBottom: '4px' }}>Specialization</label>
@@ -237,18 +255,22 @@ export default function AdminPortal({ user, token }) {
 
           {/* Active Doctor Roster */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0F172A' }}>Active Doctor Roster</h3>
-            {doctors.map(doc => (
-              <div key={doc.id} className="doppelrand-shell">
-                <div className="doppelrand-core" style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#0F172A' }}>{doc.user?.name}</h4>
-                    <p style={{ fontSize: '12px', color: '#DC2626', fontWeight: '700' }}>{doc.specialization} • ₹{doc.consultationFee} fee</p>
-                    <p style={{ fontSize: '11px', color: '#64748B' }}>Working Hours: {doc.workingHoursStart} - {doc.workingHoursEnd} ({doc.slotDurationMinutes} min slot)</p>
+            <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0F172A' }}>Active Doctor Roster ({doctors.length})</h3>
+            {doctors.length === 0 ? (
+              <p style={{ color: '#64748B', fontSize: '14px' }}>No doctor profiles found. Loading roster...</p>
+            ) : (
+              doctors.map(doc => (
+                <div key={doc.id} className="doppelrand-shell">
+                  <div className="doppelrand-core" style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#0F172A' }}>{doc.user?.name}</h4>
+                      <p style={{ fontSize: '12px', color: '#DC2626', fontWeight: '700' }}>{doc.specialization} • ₹{doc.consultationFee} fee</p>
+                      <p style={{ fontSize: '11px', color: '#64748B' }}>Working Hours: {doc.workingHoursStart} - {doc.workingHoursEnd} ({doc.slotDurationMinutes} min slot)</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}

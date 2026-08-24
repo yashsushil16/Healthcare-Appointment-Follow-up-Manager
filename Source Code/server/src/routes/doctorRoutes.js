@@ -3,6 +3,7 @@ const prisma = require('../config/db');
 const slotService = require('../services/slotService');
 const leaveService = require('../services/leaveService');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { seed } = require('../seed');
 
 const router = express.Router();
 
@@ -10,6 +11,13 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { specialization, query } = req.query;
+
+    // Guarantee DB is populated with demo doctors if count is 0
+    let count = await prisma.doctorProfile.count();
+    if (count === 0) {
+      console.log('[Doctor Route] No doctors found in DB. Executing auto-seed...');
+      await seed(true);
+    }
 
     const where = {};
     if (specialization && specialization !== 'ALL') {
@@ -49,7 +57,6 @@ router.get('/:id/slots', async (req, res) => {
       return res.status(400).json({ error: 'Date parameter (YYYY-MM-DD) is required' });
     }
 
-    // Optional user ID from auth header
     let currentUserId = null;
     if (req.headers.authorization) {
       try {
