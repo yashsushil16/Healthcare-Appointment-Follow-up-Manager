@@ -45,8 +45,16 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        throw new Error('Unable to connect to server. Please ensure backend server is running on port 5000.');
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Authentication failed. Please check your credentials.');
+      }
 
       onAuthSuccess(data.user, data.token);
       onClose();
