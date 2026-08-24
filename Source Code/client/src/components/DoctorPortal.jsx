@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Sparkles, CheckCircle2, AlertTriangle, User, FileText, Plus, Trash2, X, Send } from 'lucide-react';
+import { getApiUrl } from '../apiConfig';
 
 export default function DoctorPortal({ user, token }) {
   const [appointments, setAppointments] = useState([]);
@@ -19,7 +20,7 @@ export default function DoctorPortal({ user, token }) {
 
   const fetchAppointments = async () => {
     try {
-      const res = await fetch('/api/appointments/my-appointments', {
+      const res = await fetch(getApiUrl('/api/appointments/my-appointments'), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
@@ -57,7 +58,7 @@ export default function DoctorPortal({ user, token }) {
     try {
       const validMeds = medications.filter(m => m.name.trim() !== '');
 
-      const res = await fetch(`/api/appointments/${selectedAppt.id}/complete`, {
+      const res = await fetch(getApiUrl(`/api/appointments/${selectedAppt.id}/complete`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ export default function DoctorPortal({ user, token }) {
     if (!leaveStart || !leaveEnd) return;
 
     try {
-      const res = await fetch('/api/doctors/leave', {
+      const res = await fetch(getApiUrl('/api/doctors/leave'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

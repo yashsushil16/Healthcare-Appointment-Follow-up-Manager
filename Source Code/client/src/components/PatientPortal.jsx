@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Calendar, Clock, AlertTriangle, CheckCircle2, ShieldCheck, Stethoscope, ArrowRight, X, ExternalLink, Pill, Sparkles } from 'lucide-react';
+import { getApiUrl } from '../apiConfig';
 
 export default function PatientPortal({ user, token, onHoldTimerStart }) {
   const [viewTab, setViewTab] = useState('BOOK'); // 'BOOK' | 'MY_APPOINTMENTS'
@@ -34,7 +35,7 @@ export default function PatientPortal({ user, token, onHoldTimerStart }) {
     try {
       let url = `/api/doctors?specialization=${specialization}`;
       if (searchQuery) url += `&query=${encodeURIComponent(searchQuery)}`;
-      const res = await fetch(url);
+      const res = await fetch(getApiUrl(url));
       if (!res.ok) return;
       const contentType = res.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
@@ -55,7 +56,7 @@ export default function PatientPortal({ user, token, onHoldTimerStart }) {
     setLoading(true);
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await fetch(`/api/doctors/${docId}/slots?date=${dateStr}`, { headers });
+      const res = await fetch(getApiUrl(`/api/doctors/${docId}/slots?date=${dateStr}`), { headers });
       if (!res.ok) return;
       const contentType = res.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
@@ -72,7 +73,7 @@ export default function PatientPortal({ user, token, onHoldTimerStart }) {
   const fetchMyAppointments = async () => {
     if (!token) return;
     try {
-      const res = await fetch('/api/appointments/my-appointments', {
+      const res = await fetch(getApiUrl('/api/appointments/my-appointments'), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
@@ -90,10 +91,9 @@ export default function PatientPortal({ user, token, onHoldTimerStart }) {
   const handleHoldSlot = async (slot) => {
     let activeToken = token;
 
-    // Auto sign-in demo patient if user is not authenticated yet
     if (!activeToken) {
       try {
-        const loginRes = await fetch('/api/auth/login', {
+        const loginRes = await fetch(getApiUrl('/api/auth/login'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: 'patient@drpatho.com', password: 'password123' }),
@@ -112,11 +112,11 @@ export default function PatientPortal({ user, token, onHoldTimerStart }) {
     }
 
     try {
-      const res = await fetch('/api/appointments/hold', {
+      const res = await fetch(getApiUrl('/api/appointments/hold'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${activeToken}`,
         },
         body: JSON.stringify({
           doctorProfileId: selectedDoctor.id,
@@ -147,7 +147,7 @@ export default function PatientPortal({ user, token, onHoldTimerStart }) {
 
     setBookingLoading(true);
     try {
-      const res = await fetch('/api/appointments/book', {
+      const res = await fetch(getApiUrl('/api/appointments/book'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
