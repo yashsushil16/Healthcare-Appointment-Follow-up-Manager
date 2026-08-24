@@ -4,6 +4,14 @@
 
 ---
 
+## 🌐 Live Hosted Deployment Links
+
+- **Frontend Application (Vercel)**: [https://healthcare-appointment-follow-up-ma-bice.vercel.app](https://healthcare-appointment-follow-up-ma-bice.vercel.app)
+- **Backend API Service (Render)**: [https://healthcare-appointment-follow-up-manager-fmzs.onrender.com](https://healthcare-appointment-follow-up-manager-fmzs.onrender.com)
+- **Source Code Repository (GitHub)**: [https://github.com/yashsushil16/Healthcare-Appointment-Follow-up-Manager](https://github.com/yashsushil16/Healthcare-Appointment-Follow-up-Manager)
+
+---
+
 ## 🎨 Visual Design & Theme
 - **Color Theme**: Clean, professional Light Medical Theme with **Medical Red** (`#DC2626` / `#EF4444`) on crisp white (`#FFFFFF`) and soft slate (`#FAFAFA`) surfaces.
 - **Typography**: Google Font **Plus Jakarta Sans**.

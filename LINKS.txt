@@ -1,0 +1,11 @@
+LIVE APPLICATION & HOSTED DEPLOYMENT LINKS
+PROJECT: DrPatho Appointments - Healthcare Appointment & Follow-up Manager
+
+1. Frontend Application (Vercel):
+   https://healthcare-appointment-follow-up-ma-bice.vercel.app
+
+2. Backend API Service (Render):
+   https://healthcare-appointment-follow-up-manager-fmzs.onrender.com
+
+3. GitHub Source Code Repository:
+   https://github.com/yashsushil16/Healthcare-Appointment-Follow-up-Manager
