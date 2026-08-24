@@ -22,6 +22,16 @@ app.use('/api/doctors', doctorRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Healthcheck Routes for Render / Cloud scanners
+app.get('/health', (req, res) => res.status(200).send('OK'));
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'online',
+    app: 'DrPatho Appointments Backend',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Serve static client bundle if built
 const clientDistPath = path.join(__dirname, '../../client/dist');
 app.use(express.static(clientDistPath));
@@ -30,15 +40,6 @@ app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api')) return next();
   res.sendFile(path.join(clientDistPath, 'index.html'), (err) => {
     if (err) next();
-  });
-});
-
-// Healthcheck Route
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'online',
-    app: 'DrPatho Appointments Backend',
-    timestamp: new Date().toISOString(),
   });
 });
 

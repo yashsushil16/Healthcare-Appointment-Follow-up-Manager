@@ -1,0 +1,10 @@
+{
+  "name": "drpatho-appointments",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DrPatho Appointments Healthcare Platform Root Package",
+  "scripts": {
+    "build": "cd \"Source Code/client\" && npm install && npm run build && cd \"../server\" && npm install && npx prisma db push && npm run db:seed",
+    "start": "cd \"Source Code/server\" && node src/server.js"
+  }
+}
